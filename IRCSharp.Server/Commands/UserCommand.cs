@@ -60,9 +60,9 @@ namespace IRCSharp.Server.Commands
             client.Name = message.Params.Last();
 
             SendMessage(IrcNumericResponceId.RPL_WELCOME, client, string.Format("Welcome to the Internet Relay Network!  You're known as {0}!{1}@{2}", client.Nick, client.User, client.Host));
-            SendMessage(IrcNumericResponceId.RPL_YOURHOST, client, "Your host is running Rakainguard.Irc 0.0.1-DEV");
+            SendMessage(IrcNumericResponceId.RPL_YOURHOST, client, "Your host is running IRCSharp 0.0.1-DEV");
             SendMessage(IrcNumericResponceId.RPL_CREATED, client, "This server was created on 2014-04-04.");
-            SendMessage(IrcNumericResponceId.RPL_MYINFO, client, "127.0.0.1 Rakainguard.Irc_0.1 aiwrOos anipqsvkl");
+            SendMessage(IrcNumericResponceId.RPL_MYINFO, client, "127.0.0.1 IRCSharp aiwrOos anipqsvkl");
             client.Write(new IrcNumericResponce() { 
                 NumericId = IrcNumericResponceId.RPL_ISUPPORT,
                 Extra = "CASEMAPPING=ascii PREFIX=(qaohv)~!@%+ FNC",
