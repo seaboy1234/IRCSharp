@@ -110,10 +110,23 @@ namespace IRCSharp.Server
             IrcChannelUserMode mode = client.ChannelModes[this];
             if (Mode.IsInviteOnly)
             {
-                // TODO: Invite only.
+                if (Mode.InviteMask.Where(mask => mask.PatternMatch(client.UserString)).Count() == 0)
+                {
+                    // TODO: deny access.
+                    return;
+                }
+            }
+            if (Mode.BanMask.Where(mask => mask.PatternMatch(client.UserString)).Count() >= 1)
+            {
+                if (Mode.ExceptionMask.Where(mask => mask.PatternMatch(client.UserString)).Count() == 0)
+                {
+                    // TODO: deny access.
+                    return;
+                }
             }
             if (Users.Count == 0 && (Created - DateTime.Now).TotalSeconds < 5)
             {
+                // Flag the first member as the channel's creator.
                 mode.IsCreator = true;
             }
             Users.Add(client);
