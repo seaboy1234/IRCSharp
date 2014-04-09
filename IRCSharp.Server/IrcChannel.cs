@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using IRCSharp.Server.Commands;
+using seaboy1234.Logging;
 
 
 namespace IRCSharp.Server
@@ -79,6 +80,7 @@ namespace IRCSharp.Server
                 }
                 return true;
             }).ForEach(user => user.Write(message));
+            IrcServer.Logger.Log(LogLevel.Debug, message.ToString());
         }
 
         /// <summary>
@@ -196,6 +198,7 @@ namespace IRCSharp.Server
             IrcServer.Clients
                 .Where(client => client.ChannelModes.ContainsKey(this))
                 .ForEach(client => client.ChannelModes.Remove(this));
+            IrcServer.Logger.Log(LogLevel.Debug, "Channel {0} destroyed.", Name);
         }
     }
 }

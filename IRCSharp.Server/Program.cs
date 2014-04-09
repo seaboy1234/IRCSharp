@@ -18,6 +18,8 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using seaboy1234.Logging;
 
 namespace IRCSharp.Server
 {
@@ -29,7 +31,6 @@ namespace IRCSharp.Server
         static void Main(string[] args)
         {
             Console.Title = "IRC# Server";
-            TcpListener listener = new TcpListener(IPAddress.Any, 6667);
 
             Server = new IrcServer();
             Config = new ServerConfig();
@@ -37,15 +38,40 @@ namespace IRCSharp.Server
             Config.Load();
             Server.Hostname = Config.Host;
 
-            listener.Start();
-            while (true)
+            for (int i = 0; i < Config.Ports.Length; i++)
             {
-                Socket client = listener.AcceptSocket();
-                new IrcClient 
-                { 
-                    Socket = client, 
-                    IrcServer = Server
-                }.OnConnect();
+                int index = i;
+                Thread thread = new Thread(() => Listen(index)) { IsBackground = true };
+                thread.Start();
+            }
+            IrcServer.Logger.Log(LogLevel.Info, "Press ESC to exit.");
+            while (Console.ReadKey().Key != ConsoleKey.Escape) ;
+        }
+
+        private static void Listen(int index)
+        {
+            try
+            {
+                TcpListener listener = new TcpListener(Config.Addresses[index], Config.Ports[index]);
+                listener.Start();
+                IrcServer.Logger.Log(LogLevel.Info, "Listening on {0}:{1}", Config.Addresses[index], Config.Ports[index]);
+                while (true)
+                {
+                    Socket client = listener.AcceptSocket();
+                    new IrcClient
+                    {
+                        Socket = client,
+                        IrcServer = Server
+                    }.OnConnect();
+                }
+            }
+            catch (Exception ex)
+            {
+                IrcServer.Logger.Log(LogLevel.Error, 
+                    "The IRC Server at {0}:{1} encountered an error and is no longer listening.", 
+                    Config.Addresses[index], 
+                    Config.Ports[index]);
+                IrcServer.Logger.Log(ex);
             }
         }
     }

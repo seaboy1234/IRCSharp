@@ -21,11 +21,14 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using seaboy1234.Logging;
 
 namespace IRCSharp.Server
 {
     public class IrcServer
     {
+        public static Logger Logger { get; private set; }
+
         public string Hostname { get; set; }
         public string Motd { get; set; }
 
@@ -36,6 +39,7 @@ namespace IRCSharp.Server
         {
             Channels = new List<IrcChannel>();
             Clients = new List<IIrcUser>();
+            Logger = new Logger("IRC# Server", new ConsoleLogListener(LogLevel.Debug));
 
             Task.Factory.StartNew(DispatchPings);
             Task.Factory.StartNew(PruneChannels);
@@ -76,6 +80,7 @@ namespace IRCSharp.Server
                 };
                 Channels.Add(chan);
             }
+            Logger.Log(LogLevel.Info, "{0} joined channel {1}", client.Nick, chan.Name);
             client.Channels.Add(chan);
             chan.Join(client);
         }
@@ -105,6 +110,7 @@ namespace IRCSharp.Server
                 }
                 return;
             }
+            Logger.Log(LogLevel.Info, "{0} parted channel {1}", client.Nick, chan.Name);
             chan.Part(client, reason);
             client.Channels.Remove(chan);
         }
