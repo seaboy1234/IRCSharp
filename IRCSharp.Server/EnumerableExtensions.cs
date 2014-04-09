@@ -1,5 +1,5 @@
 ﻿//    Project:     IRC# Server 
-//    File:        ListExtensions.cs
+//    File:        EnumrableExtensions.cs
 //    Copyright:   Copyright (C) 2014 Christian Wilson. All rights reserved.
 //    Website:     https://github.com/seaboy1234/IRCSharp
 //    Description: An Internet Relay Chat (IRC) Server written in C#.
@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 
 namespace IRCSharp.Server
 {
-    public static class EnumrableExtensions
+    public static class EnumerableExtensions
     {
         public static void RemoveGroup<T>(this List<T> list, IEnumerable<T> range)
         {
