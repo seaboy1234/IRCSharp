@@ -240,7 +240,7 @@ namespace IRCSharp.Server
                     newMode += 'v';
                 }
             }
-            UpdateChannelMode(sender, user.Nick + " " + newMode);
+            UpdateChannelMode(sender, newMode + " " + user.Nick);
         }
 
         private void ParseAccessMode(IIrcUser sender, string mode, string mask)
