@@ -55,21 +55,6 @@ namespace IRCSharp
         public string Message { get; set; }
 
         /// <summary>
-        /// Gets the formatted version of this message.
-        /// </summary>
-        public string Format
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(Extra))
-                {
-                    return string.Format(":{0} {1} {2} :{3}", Host, ((int)NumericId).ToString("D3"), To, Message);
-                }
-                return string.Format(":{0} {1} {2} {3} :{4}", Host, ((int)NumericId).ToString("D3"), To, Extra, Message);
-            }
-        }
-
-        /// <summary>
         /// Parses a responce.
         /// </summary>
         /// <param name="line"></param>
@@ -85,7 +70,26 @@ namespace IRCSharp
 
         public override string ToString()
         {
-            return Format;
+            IrcMessage message = new IrcMessage();
+            List<string> strings = new List<string>();
+            if (!string.IsNullOrEmpty(To))
+            {
+                strings.Add(To);
+            }
+            if (!string.IsNullOrEmpty(Extra))
+            {
+                strings.AddRange(Extra.Split(' '));
+            }
+            if (!string.IsNullOrEmpty(Message))
+            {
+                strings.Add(Message);
+            }
+
+            message.Prefix = Host;
+            message.Command = ((int)NumericId).ToString("D3");
+            message.Params = strings.ToArray();
+
+            return message.ToString();
         }
     }
 }
