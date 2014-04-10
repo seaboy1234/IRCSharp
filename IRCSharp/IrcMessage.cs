@@ -30,6 +30,21 @@ namespace IRCSharp
         public string Command { get; set; }
         public string[] Params { get; set; }
 
+        public string this[int index]
+        {
+            get { return Params[index]; }
+            set
+            {
+                if (index > Params.Length)
+                {
+                    string[] oldParams = Params;
+                    Params = new string[index];
+                    oldParams.CopyTo(Params, 0);
+                }
+                Params[index] = value;
+            }
+        }
+
         public void Read(Stream stream)
         {
             using (StreamReader reader = new StreamReader(stream))
@@ -73,15 +88,19 @@ namespace IRCSharp
 
         public override string ToString()
         {
+            string[] realParams = Params.Where(str => !string.IsNullOrEmpty(str)).ToArray();
             string message = "";
             if (!string.IsNullOrEmpty(Prefix))
             {
                 message += string.Format(":{0} ", Prefix.Trim());
             }
             message += string.Format("{0} ", Command.Trim());
-            message += string.Join(" ", Params, 0, Params.Length - 1).Trim();
-            message += Params.Last().Contains(' ') ? " :" : " ";
-            message += Params.Last().Trim();
+            if (realParams.Length > 0)
+            {
+                message += string.Join(" ", realParams, 0, realParams.Length - 1).Trim();
+                message += realParams.Last().Contains(' ') ? " :" : " ";
+                message += realParams.Last().Trim();
+            }
 
             message = message.Replace("  ", " ");
             return message;
