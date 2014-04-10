@@ -176,7 +176,7 @@ namespace IRCSharp
         [Obsolete("Obsolete. Not used.")]
         ERR_YOUWILLBEBANNED = 466,
         ERR_KEYSET = 467,
-        ERRCHANNELISFULL = 471,
+        ERR_CHANNELISFULL = 471,
         ERR_UNKNOWNMODE = 472,
         ERR_INVITEONLYCHAN = 473,
         ERR_BANNEDFROMCHAN = 474,
