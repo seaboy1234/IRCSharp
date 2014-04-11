@@ -28,3 +28,4 @@ _ReSharper*/
 *.cs.orig
 #Ignore License Script.
 SrcHead
+srchead.bat

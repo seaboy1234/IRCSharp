@@ -145,9 +145,15 @@ namespace IRCSharp.Server
 
         public void Parse(IIrcUser sender, IrcMessage message)
         {
-            if (!sender.ChannelModes.ContainsKey(Channel))
+            if (message.Params.Length >=2)
             {
-                sender.ChannelModes.Add(Channel, new IrcChannelUserMode());
+                if (message[1].Contains('b') ||
+                    message[1].Contains('I') ||
+                    message[1].Contains('e'))
+                {
+                    ParseAccessMode(sender, message[1], message.Params.Length == 3 ? message[2] : "");
+                    return;
+                }
             }
             if (message.Params.Length >= 3)
             {
@@ -171,7 +177,7 @@ namespace IRCSharp.Server
                     ParseAccessMode(sender, message.Params[1], message.Params[2]);
                 }
             }
-            else if(message.Params.Length == 2)
+            else if(message.Params.Length == 2 && !string.IsNullOrEmpty(message.Params[1]))
             {
                 ParseChannelMode(sender, message.Params[1]);
             }
@@ -194,11 +200,12 @@ namespace IRCSharp.Server
             mode += IsInviteOnly ? "i" : "";
             mode += IsPrivate ? "p" : "";
             mode += IsQuiet ? "q" : "";
+            mode += OpSetTopic ? "t" : "";
             mode += IsSecret ? "s" : "";
             mode += IsVoiceOnly ? "v" : "";
             mode += Key != "" ? "k" : "";
             mode += UserLimit != -1 ? "l" : "";
-            mode = string.IsNullOrEmpty(mode) ? "" + mode : "+";
+            mode = string.IsNullOrEmpty(mode) ? "" : "+" + mode;
             return mode;
         }
 
@@ -209,13 +216,9 @@ namespace IRCSharp.Server
             {
                 return;
             }
-            IrcChannelUserMode senderMode = sender.ChannelModes[Channel];
-            if (!user.ChannelModes.ContainsKey(Channel))
-            {
-                user.ChannelModes.Add(Channel, new IrcChannelUserMode());
-            }
-            IrcChannelUserMode userMode = user.ChannelModes[Channel];
-            bool isSelf = (sender == user && setTrue);
+            IrcChannelUserMode senderMode = Channel.GetUserMode(sender);
+            IrcChannelUserMode userMode = Channel.GetUserMode(user);
+            bool isSelf = (sender == user && !setTrue);
             string newMode = setTrue ? "+" : "-";
             foreach (char ch in mode)
             {
@@ -250,33 +253,95 @@ namespace IRCSharp.Server
             {
                 return;
             }
-            IrcChannelUserMode senderMode = sender.ChannelModes[Channel];
+
+            if (string.IsNullOrEmpty(mask))
+            {
+                if (!setTrue)
+                {
+                    return;
+                }
+                List<string> list = null;
+                IrcNumericResponceId numeric;
+                IrcNumericResponceId endNumeric;
+                switch (mode[1])
+                {
+                    case 'b':
+                        list = BanMask;
+                        numeric = IrcNumericResponceId.RPL_BANLIST;
+                        endNumeric = IrcNumericResponceId.RPL_ENDOFBANLIST;
+                        break;
+                    case 'I':
+                        list = InviteMask;
+                        numeric = IrcNumericResponceId.RPL_INVITELIST;
+                        endNumeric = IrcNumericResponceId.RPL_ENDOFINVITELIST;
+                        break;
+                    case 'e':
+                        list = ExceptionMask;
+                        numeric = IrcNumericResponceId.RPL_EXCEPTLIST;
+                        endNumeric = IrcNumericResponceId.RPL_ENDOFEXCEPTLIST;
+                        break;
+                    default:
+                        return;
+                }
+                string items = string.Join(" ", list);
+                sender.Write(new IrcNumericResponce
+                {
+                    NumericId = numeric,
+                    To = Channel.Name,
+                    Extra = items
+                });
+                sender.Write(new IrcNumericResponce
+                {
+                    NumericId = endNumeric,
+                    To = Channel.Name,
+                    Message = "End of list"
+                });
+                return;
+            }
+
+            IrcChannelUserMode senderMode = Channel.GetUserMode(sender);
 
             if (!senderMode.IsOperator)
             {
                 return;
             }
 
-            string[] masks = mask.Split(' ');
+            List<string> masks = mask.Split(' ').ToList();
             Action<IEnumerable<string>> action = null;
             if (mode[1] == 'b')
             {
+                if (setTrue)
+                {
+                    masks.RemoveGroup(BanMask);
+                }
                 action = setTrue ? BanMask.AddRange : (Action<IEnumerable<string>>)BanMask.RemoveGroup;
             }
             if (mode[1] == 'I')
             {
+                if (setTrue)
+                {
+                    masks.RemoveGroup(InviteMask);
+                }
                 action = setTrue ? InviteMask.AddRange : (Action<IEnumerable<string>>)InviteMask.RemoveGroup;
             }
             if (mode[1] == 'e')
             {
+                if (setTrue)
+                {
+                    masks.RemoveGroup(ExceptionMask);
+                }
                 action = setTrue ? ExceptionMask.AddRange : (Action<IEnumerable<string>>)ExceptionMask.RemoveGroup;
             }
             if (action == null)
             {
                 return;
             }
+            if (masks.Count == 0)
+            {
+                return;
+            }
             action(masks);
-            UpdateChannelMode(sender, mode);
+            UpdateChannelMode(sender, mode + " " + string.Join(" ", masks));
         }
 
         private void ParseChannelMode(IIrcUser sender, string mode)
@@ -335,7 +400,7 @@ namespace IRCSharp.Server
 
         private void UpdateChannelMode(IIrcUser sender, string mode)
         {
-            if (mode.Length <= 1)
+            if (mode.Split(' ')[0].Length <= 1)
             {
                 return;
             }

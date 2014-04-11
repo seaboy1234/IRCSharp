@@ -61,8 +61,9 @@ namespace IRCSharp.Server
         {
             Channels = new List<IrcChannel>();
             Clients = new List<IIrcUser>();
-            Logger = new Logger("IRC# Server", new ConsoleLogListener(LogLevel.Debug));
+            Logger = new Logger("IRC# Server", new TextWriterLogListener(Console.Out, LogLevel.Debug));
 
+            Created = DateTime.Now;
             Task.Factory.StartNew(DispatchPings);
             Task.Factory.StartNew(PruneChannels);
         }
@@ -118,7 +119,7 @@ namespace IRCSharp.Server
         /// <param name="channel"></param>
         public void JoinChannel(IIrcUser client, string channel)
         {
-            IrcChannel chan = Channels.Where(ch => ch.Name == channel).FirstOrDefault();
+            IrcChannel chan = GetChannel(channel);
             if (chan == null)
             {
                 chan = new IrcChannel(this)
@@ -133,6 +134,26 @@ namespace IRCSharp.Server
         }
 
         /// <summary>
+        /// Checks if a channel exists.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
+        public bool ChannelExists(string channel)
+        {
+            return Channels.Where(chan => chan == channel).Count() > 0;
+        }
+
+        /// <summary>
+        /// Gets an IrcChannel.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
+        public IrcChannel GetChannel(string channel)
+        {
+            return Channels.Find(chan => chan == channel);
+        }
+
+        /// <summary>
         /// Causes a client to part a channel.
         /// </summary>
         /// <param name="client"></param>
@@ -140,10 +161,10 @@ namespace IRCSharp.Server
         /// <param name="reason"></param>
         public void LeaveChannel(IIrcUser client, string channel, string reason)
         {
-            IrcChannel chan = client.Channels.Where(ch => ch.Name == channel).FirstOrDefault();
+            IrcChannel chan = GetChannel(channel);
             if (chan == null)
             {
-                if (Channels.Where(ch => ch.Name == channel).Count() != 0)
+                if (!ChannelExists(channel))
                 {
                     client.Write(new IrcNumericResponce()
                     {

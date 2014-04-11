@@ -1,5 +1,5 @@
 ﻿//    Project:     IRC# Server 
-//    File:        EnumrableExtensions.cs
+//    File:        EnumerableExtensions.cs
 //    Copyright:   Copyright (C) 2014 Christian Wilson. All rights reserved.
 //    Website:     https://github.com/seaboy1234/IRCSharp
 //    Description: An Internet Relay Chat (IRC) Server written in C#.

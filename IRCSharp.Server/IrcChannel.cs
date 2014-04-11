@@ -56,6 +56,21 @@ namespace IRCSharp.Server
         /// </summary>
         public IrcServer IrcServer { get; private set; }
 
+        #region Compare
+        public static bool operator ==(IrcChannel channel, string name)
+        {
+            if ((object)channel == null || (object)name == null)
+            {
+                return (object)channel == (object)name;
+            }
+            return channel.Name.ToLower() == name.ToLower();
+        }
+        public static bool operator !=(IrcChannel channel, string name)
+        {
+            return channel.Name.ToLower() != name.ToLower();
+        }
+        #endregion
+
         public IrcChannel(IrcServer server)
         {
             Users = new List<IIrcUser>();
@@ -93,6 +108,15 @@ namespace IRCSharp.Server
             Command(sender, "PRIVMSG", Name + " :" + message, true);
         }
 
+        public IrcChannelUserMode GetUserMode(IIrcUser user)
+        {
+            if (!user.ChannelModes.ContainsKey(this))
+            {
+                user.ChannelModes.Add(this, new IrcChannelUserMode());
+            }
+            return user.ChannelModes[this];
+        }
+
         /// <summary>
         /// Joins this IrcChannel, provided the key is correct.
         /// </summary>
@@ -108,11 +132,16 @@ namespace IRCSharp.Server
                 client.ChannelModes.Add(this, new IrcChannelUserMode());
             }
             IrcChannelUserMode mode = client.ChannelModes[this];
-            if (Mode.IsInviteOnly)
+            if (Mode.IsInviteOnly && !mode.IsInvited)
             {
                 if (Mode.InviteMask.Where(mask => mask.PatternMatch(client.UserString)).Count() == 0)
                 {
-                    // TODO: deny access.
+                    client.Write(new IrcNumericResponce
+                    {
+                        NumericId = IrcNumericResponceId.ERR_INVITEONLYCHAN,
+                        To = Name,
+                        Message = "You are not invited."
+                    });
                     return;
                 }
             }
@@ -200,6 +229,11 @@ namespace IRCSharp.Server
         public void Nick(IIrcUser client, string newNick)
         {
             Command(client, "NICK", newNick, true);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
         }
 
         /// <summary>

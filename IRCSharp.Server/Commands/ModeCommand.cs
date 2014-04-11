@@ -35,13 +35,13 @@ namespace IRCSharp.Server.Commands
             string name = message.Params[0];
             if (IRC.IsChannel(name))
             {
-                IrcChannel channel = client.IrcServer.Channels.Where(ch => ch.Name.ToLower() == name.ToLower()).FirstOrDefault();
+                IrcChannel channel = client.IrcServer.GetChannel(message.Params[0]);
                 if (channel == null)
                 {
                     NotFoundError(client, true);
                     return;
                 }
-                if (message.Params.Length < 2)
+                if (message.Params.Length < 1)
                 {
                     NeedMoreParamsError(client);
                     return;
